@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+requests
+jinja2
+beautifulsoup4
+textstat
+sqlalchemy
+reportlab
+python-multipart

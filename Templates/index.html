@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SEO Analyzer Pro</title>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            padding: 30px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+        }
+
+        h2, h3 {
+            margin-top: 0;
+        }
+
+        nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+            padding: 6px 14px;
+            border: 2px solid #2563eb;
+            border-radius: 6px;
+        }
+
+        nav a:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 9px;
+            margin: 6px 0 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 9px 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 5px;
+            margin-right: 6px;
+        }
+
+        button:hover { background: #1e4fd8; }
+        button.secondary { background: #64748b; }
+        button.secondary:hover { background: #475569; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        th { background: #f1f5f9; font-weight: bold; }
+        tr:hover td { background: #f8fafc; }
+
+        .error {
+            color: #991b1b;
+            background: #fee2e2;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .score-box {
+            font-size: 22px;
+            font-weight: bold;
+            padding: 10px 18px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .good  { background: #d1fae5; color: #065f46; }
+        .average { background: #fef3c7; color: #92400e; }
+        .bad   { background: #fee2e2; color: #991b1b; }
+
+        .check-table td:first-child { width: 220px; font-weight: bold; color: #334155; }
+        .check-table .result { width: 120px; }
+        .check-table .rec { color: #64748b; font-size: 13px; }
+
+        .pass  { color: #16a34a; font-weight: bold; }
+        .fail  { color: #dc2626; font-weight: bold; }
+        .warn  { color: #d97706; font-weight: bold; }
+
+        .compare-win  { background: #d1fae5 !important; }
+        .compare-lose { background: #fee2e2 !important; }
+
+        .history-score {
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        hr { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <nav>
+        <a href="/">🔍 Analyzer</a>
+        <a href="/history">📋 History</a>
+    </nav>
+
+<!-- ===================== ANALYZER FORM ===================== -->
+{% if history is none %}
+<div class="card">
+    <h2>SEO Analyzer Pro</h2>
+
+    <form method="post" action="/analyze">
+        <input type="hidden" name="mode" value="single" id="mode">
+
+        <div style="margin-bottom:12px;">
+            <button type="button" onclick="setMode('single')" id="btn-single">Single Page</button>
+            <button type="button" onclick="setMode('compare')" id="btn-compare" class="secondary">Compare Two URLs</button>
+        </div>
+
+        <div id="single-section">
+            <label>Enter URL:</label>
+            <input type="text" name="url" placeholder="https://example.com" value="{{ url or '' }}">
+
+            <label>OR Paste Raw HTML:</label>
+            <textarea name="raw_content" rows="5" placeholder="Paste full HTML here">{{ raw_content or '' }}</textarea>
+        </div>
+
+        <div id="compare-section" style="display:none;">
+            <label>URL 1:</label>
+            <input type="text" name="url1" placeholder="https://example1.com" value="{{ url1 or '' }}">
+
+            <label>URL 2:</label>
+            <input type="text" name="url2" placeholder="https://example2.com" value="{{ url2 or '' }}">
+        </div>
+
+        <label>Target Keyword:</label>
+        <input type="text" name="keyword" placeholder="Enter target keyword" required value="{{ keyword or '' }}">
+
+        <button type="submit">Analyze</button>
+    </form>
+</div>
+{% endif %}
+
+
+<!-- ===================== ERROR ===================== -->
+{% if error %}
+<div class="card">
+    <div class="error">⚠️ {{ error }}</div>
+</div>
+{% endif %}
+
+
+<!-- ===================== SINGLE REPORT ===================== -->
+{% if report %}
+<div class="card">
+    <h3>SEO Report{% if url %} — <small style="font-size:14px;color:#64748b;">{{ url }}</small>{% endif %}</h3>
+
+    <div class="score-box
+        {% if report.score >= 70 %}good
+        {% elif report.score >= 40 %}average
+        {% else %}bad{% endif %}">
+        Overall Score: {{ report.score }} / 100
+    </div>
+
+    <table class="check-table">
+        <thead>
+            <tr><th>Check</th><th>Result</th><th>Recommendation</th></tr>
+        </thead>
+        <tbody>
+
+        <tr>
+            <td>Title Tag</td>
+            <td class="result {% if report.title_present %}pass{% else %}fail{% endif %}">
+                {% if report.title_present %}✅ Present{% else %}❌ Missing{% endif %}
+            </td>
+            <td class="rec">
+                {% if not report.title_present %}Add a &lt;title&gt; tag to your page.
+                {% elif not (50 <= report.title_length <= 60) %}Length is {{ report.title_length }} chars. Aim for 50–60 characters.
+                {% else %}✓ Good length ({{ report.title_length }} chars){% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Meta Description</td>
+            <td class="result {% if report.meta_present %}pass{% else %}fail{% endif %}">
+                {% if report.meta_present %}✅ Present{% else %}❌ Missing{% endif %}
+            </td>
+            <td class="rec">
+                {% if not report.meta_present %}Add a meta description tag (150–160 chars recommended).
+                {% elif not (150 <= report.meta_length <= 160) %}Length is {{ report.meta_length }} chars. Aim for 150–160 characters.
+                {% else %}✓ Good length ({{ report.meta_length }} chars){% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Word Count</td>
+            <td class="result {% if report.word_count >= 300 %}pass{% else %}fail{% endif %}">
+                {{ report.word_count }} words
+            </td>
+            <td class="rec">
+                {% if report.word_count < 300 %}Add more content. Blog posts should have at least 300 words.
+                {% else %}✓ Sufficient word count{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>H1 Tag</td>
+            <td class="result {% if report.h1_present %}pass{% else %}fail{% endif %}">
+                {% if report.h1_present %}✅ Present{% else %}❌ Missing{% endif %}
+            </td>
+            <td class="rec">
+                {% if not report.h1_present %}Add exactly one H1 tag as your main heading.{% else %}✓ H1 found{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Heading Hierarchy</td>
+            <td class="result {% if report.hierarchy_ok %}pass{% else %}fail{% endif %}">
+                {% if report.hierarchy_ok %}✅ Logical{% else %}❌ Skipped levels{% endif %}
+            </td>
+            <td class="rec">
+                {% if not report.hierarchy_ok %}Avoid skipping heading levels (e.g. H1 → H3). Use H1 → H2 → H3 in order.
+                {% else %}✓ Heading order is logical{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Keyword Density</td>
+            <td class="result
+                {% if 1 <= report.keyword_density <= 2.5 %}pass
+                {% elif report.keyword_density > 2.5 %}warn
+                {% else %}fail{% endif %}">
+                {{ report.keyword_density }}%
+            </td>
+            <td class="rec">
+                {% if report.keyword_density < 1 %}Too low. Use your keyword more naturally throughout the content.
+                {% elif report.keyword_density > 2.5 %}Too high — may look like keyword stuffing. Aim for 1–2.5%.
+                {% else %}✓ Ideal range (1–2.5%){% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Keyword in Title</td>
+            <td class="result {% if report.keyword_in_title %}pass{% else %}fail{% endif %}">
+                {% if report.keyword_in_title %}✅ Yes{% else %}❌ No{% endif %}
+            </td>
+            <td class="rec">
+                {% if not report.keyword_in_title %}Include your target keyword in the page title.{% else %}✓ Keyword found in title{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Keyword in Headings</td>
+            <td class="result {% if report.keyword_in_headings %}pass{% else %}fail{% endif %}">
+                {% if report.keyword_in_headings %}✅ Yes{% else %}❌ No{% endif %}
+            </td>
+            <td class="rec">
+                {% if not report.keyword_in_headings %}Include the keyword in at least one heading (H1/H2/H3).
+                {% else %}✓ Keyword found in headings{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Keyword in First Paragraph</td>
+            <td class="result {% if report.keyword_in_first_paragraph %}pass{% else %}fail{% endif %}">
+                {% if report.keyword_in_first_paragraph %}✅ Yes{% else %}❌ No{% endif %}
+            </td>
+            <td class="rec">
+                {% if not report.keyword_in_first_paragraph %}Try to mention your keyword naturally in the first paragraph.
+                {% else %}✓ Keyword found early in content{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Internal Links</td>
+            <td class="result {% if report.internal_links > 0 %}pass{% else %}warn{% endif %}">
+                {{ report.internal_links }}
+            </td>
+            <td class="rec">
+                {% if report.internal_links == 0 %}Add internal links to related pages on your site to improve crawlability.
+                {% else %}✓ {{ report.internal_links }} internal link(s) found{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>External Links</td>
+            <td class="result pass">{{ report.external_links }}</td>
+            <td class="rec">
+                {% if report.external_links == 0 %}Consider linking to authoritative external sources for credibility.
+                {% else %}✓ {{ report.external_links }} external link(s) found{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Images Without ALT</td>
+            <td class="result {% if report.images_without_alt == 0 %}pass{% else %}fail{% endif %}">
+                {% if report.images_without_alt == 0 %}✅ All good{% else %}❌ {{ report.images_without_alt }} missing{% endif %}
+            </td>
+            <td class="rec">
+                {% if report.images_without_alt > 0 %}Add descriptive alt text to all {{ report.images_without_alt }} image(s) for accessibility and SEO.
+                {% else %}✓ All images have alt text{% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <td>Readability (Flesch)</td>
+            <td class="result {% if report.readability_score >= 60 %}pass{% elif report.readability_score >= 30 %}warn{% else %}fail{% endif %}">
+                {{ report.readability_score }}
+            </td>
+            <td class="rec">
+                {% if report.readability_score >= 60 %}✓ Easy to read (60+ is good)
+                {% elif report.readability_score >= 30 %}Moderately difficult. Try shorter sentences and simpler words.
+                {% else %}Very difficult to read. Simplify your writing significantly.{% endif %}
+            </td>
+        </tr>
+
+        </tbody>
+    </table>
+
+    <hr>
+
+    {% if url %}
+    <form method="post" action="/download_pdf">
+        <input type="hidden" name="url" value="{{ url }}">
+        <input type="hidden" name="keyword" value="{{ keyword }}">
+        <button type="submit">⬇ Download PDF Report</button>
+    </form>
+    {% endif %}
+
+    {% if not url %}
+    <form method="post" action="/download_html_pdf">
+        <input type="hidden" name="raw_content" value="{{ raw_content }}">
+        <input type="hidden" name="keyword" value="{{ keyword }}">
+        <button type="submit">⬇ Download PDF Report</button>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
+
+
+<!-- ===================== COMPARE REPORT ===================== -->
+{% if report1 and report2 %}
+<div class="card">
+    <h3>Compare Results</h3>
+    <p style="font-size:13px;color:#64748b;">
+        <b>URL 1:</b> {{ url1 }} &nbsp;|&nbsp; <b>URL 2:</b> {{ url2 }} &nbsp;|&nbsp; <b>Keyword:</b> {{ keyword }}
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>{{ url1 }}</th>
+                <th>{{ url2 }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for key in report1.keys() %}
+        <tr>
+            <td><b>{{ key }}</b></td>
+            <td
+                {% if report1[key] is number and report2[key] is number %}
+                    {% if report1[key] > report2[key] %}class="compare-win"
+                    {% elif report1[key] < report2[key] %}class="compare-lose"{% endif %}
+                {% endif %}
+            >{{ report1[key] }}</td>
+            <td
+                {% if report1[key] is number and report2[key] is number %}
+                    {% if report2[key] > report1[key] %}class="compare-win"
+                    {% elif report2[key] < report1[key] %}class="compare-lose"{% endif %}
+                {% endif %}
+            >{{ report2[key] }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <form method="post" action="/download_compare_pdf">
+        <input type="hidden" name="url1" value="{{ url1 }}">
+        <input type="hidden" name="url2" value="{{ url2 }}">
+        <input type="hidden" name="keyword" value="{{ keyword }}">
+        <button type="submit">⬇ Download Compare PDF</button>
+    </form>
+</div>
+{% endif %}
+
+
+<!-- ===================== HISTORY PAGE ===================== -->
+{% if history is not none %}
+<div class="card">
+    <h3>&#128203; Analysis History <span style="font-size:13px;color:#94a3b8;">(last 20) &mdash; click any row to expand</span></h3>
+
+    {% if history %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>URL / Source</th>
+                <th>Keyword</th>
+                <th>Score</th>
+                <th>Type</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in history %}
+        <tr style="cursor:pointer;" onclick="toggleDetail('detail-{{ item.id }}', this)">
+            <td>{{ item.id }}</td>
+            <td>{{ item.timestamp }}</td>
+            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                {{ item.url1 or "&mdash;" }}{% if item.url2 %} vs {{ item.url2 }}{% endif %}
+            </td>
+            <td>{{ item.keyword or "&mdash;" }}</td>
+            <td>
+                {% if item.report.score is defined %}
+                <span class="history-score {% if item.report.score >= 70 %}good{% elif item.report.score >= 40 %}average{% else %}bad{% endif %}">
+                    {{ item.report.score }}/100
+                </span>
+                {% elif item.report["URL 1"] is defined %}
+                <span class="history-score average">Compare</span>
+                {% else %}&mdash;{% endif %}
+            </td>
+            <td>{% if item.url2 %}Compare{% else %}Single{% endif %}</td>
+            <td style="color:#2563eb;font-size:12px;white-space:nowrap;">&#9660; View</td>
+        </tr>
+        <tr id="detail-{{ item.id }}" style="display:none;background:#f8fafc;">
+            <td colspan="7" style="padding:16px;">
+
+                {% if item.report.score is defined %}
+                <b>Full Report &mdash; {{ item.url1 }}</b>
+                <table style="margin-top:10px;font-size:13px;">
+                    <thead><tr><th>Check</th><th>Result</th></tr></thead>
+                    <tbody>
+                    <tr><td>Overall Score</td><td><span class="history-score {% if item.report.score >= 70 %}good{% elif item.report.score >= 40 %}average{% else %}bad{% endif %}">{{ item.report.score }}/100</span></td></tr>
+                    <tr><td>Title Present</td><td>{% if item.report.title_present %}&#9989; Yes{% else %}&#10060; No{% endif %}</td></tr>
+                    <tr><td>Title Length</td><td>{{ item.report.title_length }} chars (ideal: 50-60)</td></tr>
+                    <tr><td>Meta Description Present</td><td>{% if item.report.meta_present %}&#9989; Yes{% else %}&#10060; No{% endif %}</td></tr>
+                    <tr><td>Meta Length</td><td>{{ item.report.meta_length }} chars (ideal: 150-160)</td></tr>
+                    <tr><td>Word Count</td><td>{{ item.report.word_count }}</td></tr>
+                    <tr><td>H1 Present</td><td>{% if item.report.h1_present %}&#9989; Yes{% else %}&#10060; No{% endif %}</td></tr>
+                    <tr><td>Heading Hierarchy</td><td>{% if item.report.hierarchy_ok %}&#9989; Logical{% else %}&#10060; Skipped levels{% endif %}</td></tr>
+                    <tr><td>Keyword Density</td><td>{{ item.report.keyword_density }}%</td></tr>
+                    <tr><td>Keyword in Title</td><td>{% if item.report.keyword_in_title %}&#9989; Yes{% else %}&#10060; No{% endif %}</td></tr>
+                    <tr><td>Keyword in Headings</td><td>{% if item.report.keyword_in_headings %}&#9989; Yes{% else %}&#10060; No{% endif %}</td></tr>
+                    <tr><td>Keyword in First Paragraph</td><td>{% if item.report.keyword_in_first_paragraph %}&#9989; Yes{% else %}&#10060; No{% endif %}</td></tr>
+                    <tr><td>Internal Links</td><td>{{ item.report.internal_links }}</td></tr>
+                    <tr><td>External Links</td><td>{{ item.report.external_links }}</td></tr>
+                    <tr><td>Images Without ALT</td><td>{{ item.report.images_without_alt }}</td></tr>
+                    <tr><td>Readability Score (Flesch)</td><td>{{ item.report.readability_score }}</td></tr>
+                    </tbody>
+                </table>
+
+                {% elif item.report["URL 1"] is defined %}
+                <b>Compare Report &mdash; {{ item.url1 }} vs {{ item.url2 }}</b>
+                <table style="margin-top:10px;font-size:13px;">
+                    <thead><tr><th>Check</th><th>URL 1</th><th>URL 2</th></tr></thead>
+                    <tbody>
+                    {% for key in item.report["URL 1"].keys() %}
+                    <tr>
+                        <td>{{ key }}</td>
+                        <td>{{ item.report["URL 1"][key] }}</td>
+                        <td>{{ item.report["URL 2"][key] }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:#94a3b8;">No analyses saved yet. Run an analysis to see history here.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+</div><!-- end container -->
+
+<script>
+function toggleDetail(id, row) {
+    var detail = document.getElementById(id);
+    var isOpen = detail.style.display !== "none";
+    detail.style.display = isOpen ? "none" : "table-row";
+    var arrow = row.cells[row.cells.length - 1];
+    arrow.innerHTML = isOpen ? "&#9660; View" : "&#9650; Close";
+}
+
+function setMode(mode) {
+    document.getElementById("mode").value = mode;
+    const isSingle = mode === "single";
+    document.getElementById("single-section").style.display = isSingle ? "block" : "none";
+    document.getElementById("compare-section").style.display = isSingle ? "none" : "block";
+    document.getElementById("btn-single").className = isSingle ? "" : "secondary";
+    document.getElementById("btn-compare").className = isSingle ? "secondary" : "";
+}
+
+// Restore compare mode if url1/url2 are pre-filled
+var prefilledUrl1 = "{{ url1 or '' }}";
+window.addEventListener("DOMContentLoaded", () => {
+    if (prefilledUrl1) {
+        setMode("compare");
+    }
+});
+</script>
+
+</body>
+</html>
