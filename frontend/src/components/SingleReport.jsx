@@ -159,6 +159,15 @@ export default function SingleReport({ data, API }) {
             </button>
           </form>
         )}
+        {!url && data.raw_content && (
+          <form method="post" action={`${API}/download_html_pdf`}>
+            <input type="hidden" name="raw_content" value={data.raw_content} />
+            <input type="hidden" name="keyword" value={keyword} />
+            <button type="submit" className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold border border-slate-700 transition-all">
+              ⬇ Download PDF
+            </button>
+          </form>
+        )}
       </div>
     </div>
   )

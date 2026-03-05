@@ -23,8 +23,29 @@ function getCellStyle(key, v1, v2) {
   return firstWins ? "win" : "lose"
 }
 
+import { useState } from "react"
+
 export default function CompareReport({ data, API }) {
   const { report1, report2, url1, url2, keyword } = data
+  const [aiSuggestions, setAiSuggestions] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const getAISuggestions = async () => {
+    setAiLoading(true)
+    try {
+      const res = await fetch(`${API}/ai-suggestions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ report: report1, keyword, url: url1, compare: { report2, url2 } }),
+      })
+      const d = await res.json()
+      setAiSuggestions(d.suggestions)
+    } catch (e) {
+      setAiSuggestions("Failed to get AI suggestions. Please try again.")
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   return (
     <div className="mt-8 space-y-6">
@@ -71,6 +92,34 @@ export default function CompareReport({ data, API }) {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* AI Suggestions */}
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-bold text-white">✨ AI-Powered Suggestions</h3>
+            <p className="text-slate-500 text-xs mt-1">Get improvement suggestions based on URL 1 analysis</p>
+          </div>
+          <button
+            onClick={getAISuggestions}
+            disabled={aiLoading}
+            className="px-4 py-2 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/20 text-sm font-semibold transition-all disabled:opacity-50"
+          >
+            {aiLoading ? "Generating..." : "Generate Suggestions"}
+          </button>
+        </div>
+        {aiLoading && (
+          <div className="flex items-center gap-3 text-slate-400 text-sm">
+            <div className="w-4 h-4 rounded-full border-2 border-slate-600 border-t-violet-400 animate-spin" />
+            Analyzing with AI...
+          </div>
+        )}
+        {aiSuggestions && (
+          <div className="mt-2 p-4 rounded-xl bg-slate-800 text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">
+            {aiSuggestions}
+          </div>
+        )}
       </div>
 
       <form method="post" action={`${API}/download_compare_pdf`}>
