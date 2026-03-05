@@ -1,12 +1,14 @@
 # SEO Analyzer Pro
 
-A full-stack web application that analyzes web pages and HTML content for SEO readiness. Built as part of a Data Science Intern take-home assignment.
+A full-stack SEO analysis tool where marketing teams can analyze blog posts and web pages for SEO readiness. Built as a take-home assignment for a Data Science Intern (Full-Stack) role.
 
 ---
 
 ## Live Demo
 
-> Add your deployed URL here after deployment
+**Frontend:** https://seo-analyzer-frontend-5xnk.onrender.com  
+**Backend API:** https://seo-analyzer-z9z0.onrender.com  
+**API Docs (Swagger):** https://seo-analyzer-z9z0.onrender.com/docs
 
 ---
 
@@ -15,9 +17,9 @@ A full-stack web application that analyzes web pages and HTML content for SEO re
 ### Core
 - **URL Analysis** — Paste any public URL and the app fetches and analyzes the page automatically
 - **Raw HTML Analysis** — Paste raw HTML directly for instant analysis
-- **Keyword Targeting** — Enter a target keyword to check density, placement, and usage across the page
-- **SEO Report Dashboard** — Clean, color-coded pass/fail results for every check with actionable recommendations
-- **Overall SEO Score** — Aggregate score out of 100 with green / amber / red indicator
+- **Keyword Targeting** — Enter a target keyword to check density, placement, and usage
+- **SEO Report Dashboard** — Color-coded pass/fail results with actionable recommendations per check
+- **Overall SEO Score** — Aggregate score out of 100
 
 ### What Gets Analyzed
 | Check | Details |
@@ -33,38 +35,50 @@ A full-stack web application that analyzes web pages and HTML content for SEO re
 | Readability | Flesch Reading Ease score (60+ = easy) |
 
 ### Stretch Goals Completed
-- **Compare Mode** — Analyze two URLs side by side with highlighted winner/loser per metric
+- **Compare Mode** — Analyze two URLs side by side with green/red highlighting per metric
 - **PDF Export** — Download any report (single or compare) as a formatted PDF
-- **History** — Every analysis is saved to a local SQLite database; view past results on the History page with expandable full-report rows
+- **History** — Every analysis saved to SQLite; view past results with expandable full-report rows
+- **AI-Powered Suggestions** — Groq LLM generates specific rewrite suggestions for weak titles, meta descriptions, and other SEO issues (available on both single and compare mode)
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | FastAPI (Python) |
-| Templating | Jinja2 |
-| HTML Parsing | BeautifulSoup4 |
-| Readability | textstat |
-| PDF Generation | ReportLab |
-| Database | SQLite via SQLAlchemy |
-| Frontend | Vanilla HTML/CSS/JS |
+| Layer | Technology | Why |
+|---|---|---|
+| Backend | FastAPI (Python) | Fast, async, auto-generates Swagger docs |
+| HTML Parsing | BeautifulSoup4 | Reliable and lightweight |
+| Readability | textstat | Simple Flesch score with no heavy dependencies |
+| PDF Generation | ReportLab | No system dependencies, cross-platform |
+| Database | SQLite via SQLAlchemy | Zero setup, sufficient for demo scale |
+| AI Suggestions | Groq API (llama-3.3-70b-versatile) | Free tier, fast inference |
+| Frontend | React + Vite + Tailwind CSS | Modern SPA, clean component architecture |
+| Deployment | Render (backend + frontend) | Simple GitHub integration, free tier |
 
 ---
 
 ## Project Structure
 
 ```
-seo-analyzer/
-├── main.py              # FastAPI app, all routes
-├── analyzer.py          # Core SEO analysis logic
-├── pdf_generator.py     # PDF export using ReportLab
-├── database.py          # SQLAlchemy models and DB init
-├── requirements.txt     # Python dependencies
-├── templates/
-│   └── index.html       # Single-page Jinja2 template
-└── analysis_history.db  # Auto-created SQLite database (gitignored)
+SEO-Analyzer/
+├── backend/
+│   ├── main.py              # FastAPI app, all JSON endpoints
+│   ├── analyzer.py          # Core SEO analysis logic
+│   ├── pdf_generator.py     # PDF export using ReportLab
+│   ├── database.py          # SQLAlchemy models and DB init
+│   └── requirements.txt     # Python dependencies
+└── frontend/
+    ├── src/
+    │   ├── App.jsx           # Root component, routing
+    │   ├── components/
+    │   │   ├── Header.jsx
+    │   │   ├── AnalyzerForm.jsx
+    │   │   ├── SingleReport.jsx
+    │   │   ├── CompareReport.jsx
+    │   │   └── History.jsx
+    │   └── main.jsx
+    ├── package.json
+    └── vite.config.js
 ```
 
 ---
@@ -72,15 +86,16 @@ seo-analyzer/
 ## Installation & Setup
 
 ### Prerequisites
-- Python 3.9 or higher
-- pip
+- Python 3.9+
+- Node.js 18+
+- A free [Groq API key](https://console.groq.com)
 
-### Steps
+### Backend Setup
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/your-username/seo-analyzer.git
-cd seo-analyzer
+git clone https://github.com/Haricharan24/SEO-Analyzer.git
+cd SEO-Analyzer
 ```
 
 **2. Create and activate a virtual environment**
@@ -96,51 +111,42 @@ venv\Scripts\activate
 
 **3. Install dependencies**
 ```bash
+cd backend
 pip install -r requirements.txt
 ```
 
-**4. Create the templates folder and move the HTML file**
-```bash
-mkdir templates
-mv index.html templates/
+**4. Create a .env file inside backend/**
+```
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
-**5. Run the app**
+**5. Run the backend**
 ```bash
 uvicorn main:app --reload
 ```
 
-**6. Open in browser**
+Backend runs at `http://localhost:8000`  
+Swagger docs at `http://localhost:8000/docs`
+
+### Frontend Setup
+
+**1. Install dependencies**
+```bash
+cd frontend
+npm install
 ```
-http://localhost:8000
+
+**2. Create a .env file inside frontend/**
+```
+VITE_API_URL=http://localhost:8000
 ```
 
-The SQLite database (`analysis_history.db`) is created automatically on first startup — no setup needed.
+**3. Run the frontend**
+```bash
+npm run dev
+```
 
----
-
-## Usage
-
-### Single Page Analysis
-1. Go to the home page
-2. Enter a URL **or** paste raw HTML into the text area
-3. Enter your target keyword
-4. Click **Analyze**
-5. View the full report with pass/fail indicators and recommendations
-6. Click **Download PDF Report** to export
-
-### Compare Mode
-1. Click **Compare Two URLs**
-2. Enter URL 1 and URL 2
-3. Enter your target keyword
-4. Click **Analyze**
-5. View a side-by-side comparison table (green = better, red = worse)
-6. Click **Download Compare PDF** to export
-
-### History
-1. Click **History** in the nav bar
-2. View all past analyses with date, URL, keyword, and score
-3. Click any row to expand and see the full report inline
+Frontend runs at `http://localhost:5173`
 
 ---
 
@@ -148,68 +154,83 @@ The SQLite database (`analysis_history.db`) is created automatically on first st
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/` | Home page |
-| POST | `/analyze` | Run single or compare analysis |
-| GET | `/history` | View analysis history |
+| GET | `/` | Health check |
+| POST | `/analyze` | Run single or compare analysis, returns JSON |
+| GET | `/history` | Fetch last 20 analyses |
+| POST | `/ai-suggestions` | Get AI-powered rewrite suggestions via Groq |
 | POST | `/download_pdf` | Download single URL report as PDF |
 | POST | `/download_html_pdf` | Download raw HTML report as PDF |
 | POST | `/download_compare_pdf` | Download compare report as PDF |
+
+Full interactive documentation available at `/docs` (Swagger UI).
 
 ---
 
 ## AI Tools Used
 
-This project was built with assistance from **Claude (Anthropic)**. AI was used for:
-- Generating boilerplate FastAPI route structure
-- Writing and debugging the Jinja2 template logic
-- Fixing edge cases in the heading hierarchy checker
-- PDF table styling with ReportLab
-- Debugging SQLAlchemy integration and Jinja2 `UndefinedError` issues
+This project was built with significant assistance from **Claude (Anthropic)**. Here is an honest account of how AI was used, where it helped, and where it fell short.
 
-All code was reviewed, understood, and debugged manually. AI was used as a productivity tool, not a replacement for understanding the codebase.
+### What AI helped with
+- Generating the initial FastAPI route structure and Jinja2 template logic
+- Writing BeautifulSoup parsing logic for heading hierarchy checking
+- Building the React component structure and Tailwind styling
+- Debugging the SQLAlchemy `declarative_base` deprecation error
+- Fixing Jinja2 `UndefinedError` issues when variables weren't passed in template context
+
+### Where AI got things wrong
+- **Heading hierarchy logic** — The first version Claude generated used `last_level = 0` and reset incorrectly between sections, causing false positives (e.g. flagging valid H2 → H3 jumps as errors). I had to trace through the logic manually to find the bug and fix the condition to only flag jumps greater than 1 level.
+- **Groq model name** — Claude suggested `llama3-8b-8192` which had already been decommissioned. Then suggested `llama3-70b-8192` which was also deprecated. I had to check the Groq deprecation docs myself and find the correct current model (`llama-3.3-70b-versatile`).
+- **Jinja2 tags inside script blocks** — Claude initially put `{% if url1 %}` directly inside a `<script>` tag which caused JavaScript syntax errors in the browser. I identified this was a JS parser issue (not a Jinja2 issue) and pushed back, which led to the correct fix of rendering the value into a JS variable instead.
+- **`.env` in git history** — Claude's initial `.gitignore` setup didn't prevent the `.env` file from being committed in an earlier push. GitHub's secret scanning blocked the push. I had to use `git filter-branch` to purge the file from history and regenerate the API key.
+
+### How I decided what to accept vs modify
+I treated AI suggestions as a first draft, not a final answer. I accepted suggestions when I could read the code, understand what it was doing, and verify it matched the requirement. I modified or rejected suggestions when the logic didn't hold up under manual tracing — like the heading hierarchy bug — or when the output didn't match real-world conditions like the deprecated model names. The AI was most useful for boilerplate and structure; the actual debugging and correctness checking was done manually.
 
 ---
 
 ## Trade-offs & Decisions
 
-- **Single template file** — All UI lives in `index.html` using Jinja2 conditionals. Keeps the project simple and easy to deploy without a frontend build step.
-- **SQLite over PostgreSQL** — Sufficient for a local/demo app. Easy to swap to PostgreSQL by changing `DATABASE_URL` in `database.py`.
-- **No authentication** — Out of scope for this assignment. Would be a priority before any real deployment.
-- **ReportLab over WeasyPrint** — ReportLab has no system dependencies, making it easier to install cross-platform.
+- **Single template → React SPA** — Started with Jinja2 server-rendered templates for speed, then migrated to a proper React SPA to separate concerns and make the architecture extensible
+- **SQLite over PostgreSQL** — Sufficient for demo scale, zero setup. Easy to swap by changing `DATABASE_URL` in `database.py`
+- **Groq over OpenAI** — Free tier with fast inference, no credit card required
+- **Render for both frontend and backend** — Keeps deployment on one platform, simpler to manage
 
 ---
 
 ## Known Limitations
 
-- Some websites block automated requests even with a User-Agent header (returns fetch error)
-- Keyword density is calculated on all page text including navigation/footer — may slightly inflate counts on pages with heavy boilerplate
-- Readability score can be skewed on pages with very little text content
-- History is stored locally — clears if the server is redeployed without persisting the `.db` file
+- Some websites block automated requests even with a User-Agent header
+- Keyword density counts all page text including navigation/footer — may slightly inflate counts
+- SQLite history is local — clears on Render redeploy unless a persistent disk is attached
+- Render free tier spins down after inactivity — first load may take 30–60 seconds to wake up
 
 ---
 
 ## What I Would Add With More Time
 
-- AI-powered rewrite suggestions for weak titles and meta descriptions using an LLM API
-- User authentication so each user has their own history
-- Keyword suggestion feature based on page content
-- Competitor analysis mode comparing your page vs a competitor
-- Cloud database (PostgreSQL) for persistent history across deployments
-- Better mobile responsiveness
+- Persistent database (PostgreSQL) so history survives redeployments
+- User authentication so each user sees their own history
+- Keyword suggestion feature based on page content analysis
+- Competitor analysis mode with deeper comparison metrics
+- Export history as CSV
 
 ---
 
 ## Deployment
 
-The app can be deployed to any platform that supports Python. Recommended options:
+Both services are deployed on Render:
 
-**Render (easiest)**
-1. Push to GitHub
-2. Create a new Web Service on [render.com](https://render.com)
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+**Backend (Web Service)**
+- Root Directory: `backend`
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- Environment Variable: `GROQ_API_KEY`
 
-**Railway / Fly.io** — Similar process, also free tier available.
+**Frontend (Static Site)**
+- Root Directory: `frontend`
+- Build Command: `npm run build`
+- Publish Directory: `dist`
+- Environment Variable: `VITE_API_URL=https://seo-analyzer-z9z0.onrender.com`
 
 ---
 
