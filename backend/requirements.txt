@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+requests
+httpx
+beautifulsoup4
+textstat
+reportlab
+sqlalchemy
+python-multipart
+python-dotenv
